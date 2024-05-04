@@ -1,37 +1,20 @@
-#include "CMyVector.h"
+#include "../lib/CMyVector.h"
+#include "../lib/Helper.h"
 #include <cmath>
 #include <stdexcept>
 #include <iostream>
 #include <string>
 #include <functional>
 
-int main() {
-    std::function<double(CMyVector)> f = [](CMyVector x) {
-        return sin(x[0]*x[1]) + sin(x[0]) + cos(x[1]);
-    };
-
-    CMyVector f_start = {0.2, -2.1};
-
-    std::function<double(CMyVector)> g = [](CMyVector x) {
-        return -(2*x[0]*x[0] - 2*x[0]*x[1] + x[1]*x[1] + x[2]*x[2] - 2*x[0] - 4*x[2]);
-    };
-
-    CMyVector g_start = {0.0, 0.0, 0.0}; 
-
-    //std::cout << f_start.maximize(f).to_string() << std::endl;
-    //std::cout << g_start.maximize(g, 0.1).to_string() << std::endl;
-    
-    std::cout << CMyVector::curveFit({{-1.5, -1.9}, {-1, -0.6}, {-0.5, -0.4}, {0, 0.3}, {0.5, 0}, {1, 0.6}, {1.5, -0.1}}, 2).to_string() << std::endl;
-
-    return 0;
-}
-
 const int CMyVector::MAX_STEPS = 25;
 const double CMyVector::MAX_ERROR = 1e-5;
+const bool CMyVector::DEBUG = false;
 
 CMyVector::CMyVector(int dimension) : m_data(dimension) {}
 
 CMyVector::CMyVector(std::initializer_list<double> values) : m_data(values) {}
+
+CMyVector::CMyVector(std::vector<double> values) : m_data(values) {}
 
 CMyVector::~CMyVector() {
     m_data.clear();
@@ -80,7 +63,7 @@ CMyVector CMyVector::operator*(double scalar) const {
     return result;
 }
 
-CMyVector CMyVector::operator*(CMyVector& other) const {
+CMyVector CMyVector::operator*(const CMyVector& other) const {
     if(dimension() != other.dimension()) {
         throw std::invalid_argument("Vectors must have the same dimension.");
     }
@@ -91,6 +74,24 @@ CMyVector CMyVector::operator*(CMyVector& other) const {
     }
 
     return result;
+}
+
+bool CMyVector::operator==(const CMyVector& other) const {
+    if(dimension() != other.dimension()) {
+        return false;
+    }
+
+    for (int i = 0; i < m_data.size(); i++) {
+        if(m_data[i] != other.m_data[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool CMyVector::operator!=(const CMyVector& other) const {
+    return !(*this == other);
 }
 
 double CMyVector::magnitude() const {
@@ -129,30 +130,32 @@ double CMyVector::get(int index) const {
     return m_data[index];
 }
 
-CMyVector CMyVector::gradient(std::function<double(CMyVector)> f, double h) const {
-    CMyVector result(dimension());
+CMyVector CMyVector::gradient(const CMyVector& x, std::function<double(CMyVector)> f, double h) {
+    CMyVector result(x.dimension());
 
-    for (int i = 0; i < dimension(); i++) {
-        CMyVector hVector(dimension());
+    for (int i = 0; i < x.dimension(); i++) {
+        CMyVector hVector(x.dimension());
         hVector[i] = h;
 
-        result[i] = (f(*this + hVector) - f(*this)) / h;
+        result[i] = (f(x + hVector) - f(x)) / h;
     }
 
     return result;
 }
 
-CMyVector CMyVector::minimize(std::function<double(CMyVector)> f, double lambda, double h) const {
-    return maximize([f](CMyVector x) { return -f(x); }, lambda, h);
+CMyVector CMyVector::minimize(const CMyVector& x, std::function<double(CMyVector)> f, double lambda, double h) {
+    return CMyVector::maximize(x, [f](CMyVector x) { return -f(x); }, lambda, h);
 }
 
-CMyVector CMyVector::maximize(std::function<double(CMyVector)> f, double lambda, double h) const {
-    CMyVector current_pos = CMyVector(*this);
+CMyVector CMyVector::maximize(const CMyVector& x, std::function<double(CMyVector)> f, double lambda, double h) {
+    auto unmute = Helper::muteOutput(!DEBUG);
+
+    CMyVector current_pos = CMyVector(x);
     double step_size = lambda;
     int step = 0;
 
     while(true){
-        CMyVector gradient = current_pos.gradient(f, h);
+        CMyVector gradient = CMyVector::gradient(current_pos, f, h);
         CMyVector new_pos = current_pos + (gradient * step_size);
         
         std::cout << std::endl;
@@ -220,7 +223,8 @@ CMyVector CMyVector::maximize(std::function<double(CMyVector)> f, double lambda,
 
         step++;
     }
-
+    
+    unmute();
     return current_pos;
 }
 
@@ -240,7 +244,7 @@ CMyVector CMyVector::curveFit(std::vector<CMyVector> points, int degree) {
     CMyVector result(degree + 1);
 
     std::function<double(CMyVector)> error = [degree, points](CMyVector coefficients) {
-        std::function<double(double)> f = polynomial(coefficients);
+        std::function<double(double)> f = CMyVector::polynomial(coefficients);
 
         double deviation = 0;
 
@@ -251,7 +255,7 @@ CMyVector CMyVector::curveFit(std::vector<CMyVector> points, int degree) {
         return deviation;
     };
 
-    return result.minimize(error, 0.1); 
+    return CMyVector::minimize(result, error, 0.1); 
 }
 
 std::string CMyVector::to_string() const {
