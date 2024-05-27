@@ -180,6 +180,17 @@ TEST_CASE("Newton method", "[CMyMatrix]")  {
         REQUIRE_THAT(result.get(0), WithinAbs(2.0, 0.0001));
         REQUIRE_THAT(result.get(1), WithinAbs(-0.5, 0.0001));
     }
+
+    SECTION("ETest R^2 -> R^2") {
+        CMyVector x({1.0, 0.0});
+
+        std::function<CMyVector(CMyVector)> f = [](CMyVector v) {
+            return CMyVector({std::pow(v.get(0), 2) * v.get(1) - 1,
+                              3*std::pow(v.get(1), 2)-2*v.get(0)-v.get(1) - 3});
+        };
+
+        CMyVector result = CMyMatrix::newton(x, f);
+    }
 }
 
 
