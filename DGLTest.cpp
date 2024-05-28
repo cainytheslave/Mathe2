@@ -61,3 +61,51 @@ TEST_CASE("CDGLSolver can solve nth order equations", "[CDGLSolver]") {
         }
     }
 }
+
+TEST_CASE("DGLSolver can be used to minimize", "[CDGLSolver]") {
+    std::vector<double> target = {0.015, 0.027, 0.059, 0.112, 0.209, 0.350, 0.523};
+
+    auto equation = [](const CMyVector y, double x, double lambda) {
+        CMyVector dy(1);
+        dy[0] = lambda * y.get(0) * (1 - y.get(0));
+        return dy;
+    };
+
+    auto approximate = [target, equation](double lambda, double u) {
+        double m0 = target.at(0);
+        CMyVector y_start({u * m0});
+
+        CDGLSolver solver([target, equation, lambda](const CMyVector y, double x) {
+            return equation(y, x, lambda);
+        });
+        
+        CMyVector result(target.size());
+
+        for(int i = 0; i < target.size(); ++i) {
+            result[i] = solver.heun(0.0, i, 10000, y_start).get(0);
+        }
+
+        return result;
+    };
+
+    auto error = [target, approximate](const CMyVector x){
+        double lambda = x.get(0);
+        double u = x.get(1);
+
+        CMyVector approx = approximate(lambda, u);
+        
+        double sum = 0.0;
+        for(int i = 0; i < target.size(); ++i) {
+            sum += pow(approx.get(i) - target.at(i), 2);
+        }
+
+        return sum;
+    };
+
+    CMyVector x_start({0.712, 0.933});
+
+    CMyVector result = CMyVector::minimize(x_start, error, 0.001);
+
+    std::cout << "Ergebnis: " << result.to_string() << std::endl;
+}
+
