@@ -3,7 +3,7 @@
 #include <cmath>
 #include <iomanip>
 #include <iostream>
-#include "lib/CDGLSolver.h"
+#include "../lib/CDGLSolver.h"
 
 using namespace Catch::Matchers;
 
