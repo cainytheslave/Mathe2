@@ -8,7 +8,7 @@
 
 const int CMyVector::MAX_STEPS = 25;
 const double CMyVector::MAX_ERROR = 1e-5;
-const bool CMyVector::DEBUG = true;
+const bool CMyVector::DEBUG = false;
 
 CMyVector::CMyVector(int dimension) : m_data(dimension) {}
 

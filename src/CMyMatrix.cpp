@@ -6,7 +6,7 @@
 
 const int CMyMatrix::NEWTON_MAX_STEPS = 50;
 const double CMyMatrix::NEWTON_MAX_ERROR = 1e-5;
-const bool CMyMatrix::DEBUG = true;
+const bool CMyMatrix::DEBUG = false;
 
 CMyMatrix::CMyMatrix(int rows, int columns) {
     m_data = std::vector<std::vector<double>>(rows, std::vector<double>(columns, 0.0));
