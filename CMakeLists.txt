@@ -9,12 +9,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(Catch2 3 REQUIRED)
 
 list(APPEND targets
-    "src/CMyVector.cpp"
-    "src/CMyMatrix.cpp"
-    "src/CDGLSolver.cpp"
-    "src/CComplex.cpp"
-    "tests/CComplexTest.cpp"
-    "tests/DFTTest.cpp"
+    #"src/CMyVector.cpp"
+    #"src/CMyMatrix.cpp"
+    #"src/CDGLSolver.cpp"
+    #"src/CComplex.cpp"
+    "src/CRandom.cpp"
+    "tests/CRandomTest.cpp"
 )
 
 add_executable(${PROJECT_NAME} ${targets})
